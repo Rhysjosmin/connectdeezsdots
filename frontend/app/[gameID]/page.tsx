@@ -11,44 +11,59 @@ const socket = io(config.server);
 
 export default function Home({ params }: { params: { gameID: string } }) {
   const router = useRouter();
-
   const [pokemonData, setPokemonData] = useState([]);
-  const { setClientID, selectPokemon, clientID } = usePokiStore();
+  const { selectPokemon, clientID } = usePokiStore();
+
   useEffect(() => {
     socket.emit("connectToGame", { gameID: params.gameID, clientID });
-  }, []);
-  socket.on("pokemonData", (data) => {
-    setPokemonData(data.data);
-    selectPokemon(data.data[0].id);
-    setClientID(data.clientID);
-  });
-  socket.on("endGame", () => {
-    router.push("/");
-  });
+
+    socket.on("pokemonData", (data) => {
+      console.log("Received Pokemon Data");
+      setPokemonData(data.data);
+      selectPokemon(data.data[0].id);
+    });
+
+    socket.on("endGame", () => {
+      router.push("/");
+    });
+
+    return () => {
+      socket.off("pokemonData");
+      socket.off("endGame");
+    };
+  }, [params.gameID, clientID, router, selectPokemon]);
+
   return (
     <main className="h-screen w-screen overflow-hidden">
       <h1>Game : {params.gameID}</h1>
-      <div className="absolute  bottom-12 right-12">
-        <Moves pokemonData={pokemonData} />
+      <div className="absolute bottom-12 right-12">
+        <Moves pokemonData={pokemonData} gameID={params.gameID} />
         <Stack pokemonData={pokemonData} />
       </div>
     </main>
   );
 }
 
-function Moves({ pokemonData }: { pokemonData: Array<PokemonType> }) {
+function Moves({
+  pokemonData,
+  gameID,
+}: {
+  pokemonData: Array<PokemonType>;
+  gameID: string;
+}) {
   const { selectedPokemon, clientID } = usePokiStore();
-  const selectedPokemonData = pokemonData.filter(
-    (x) => x.id == selectedPokemon,
-  )[0];
+  const selectedPokemonData = pokemonData.find((x) => x.id === selectedPokemon);
+
   const moveSelection = (moveData: MoveType) => {
-    socket.emit("moveSelection", { ...moveData, clientID });
+    socket.emit("moveSelection", { ...moveData, clientID, gameID });
   };
-  if (selectedPokemonData == null || selectedPokemonData.moves == null) {
+
+  if (!selectedPokemonData || !selectedPokemonData.moves) {
     return <>none</>;
   }
+
   return (
-    <div className="flex flex-col p-2 gap-1  items-end ">
+    <div className="flex flex-col p-2 gap-1 items-end">
       {selectedPokemonData.moves.map((move) => (
         <button
           key={move.name}
@@ -67,13 +82,15 @@ function Moves({ pokemonData }: { pokemonData: Array<PokemonType> }) {
     </div>
   );
 }
+
 function Stack({ pokemonData }: { pokemonData: Array<PokemonType> }) {
   const { selectPokemon } = usePokiStore();
   const numCards = pokemonData.length;
+
   return (
     <div
       style={{ rotate: `${numCards * 9}deg` }}
-      className="relative w-96 h-96  "
+      className="relative w-96 h-96"
     >
       {pokemonData.map((pokemon, i) => (
         <div
@@ -95,7 +112,7 @@ function Stack({ pokemonData }: { pokemonData: Array<PokemonType> }) {
 function Card({ id, url, attack, name, moves }: PokemonType) {
   return (
     <div className="w-52 aspect-[9/12] group z-0 hover:z-10">
-      <div className="border w-52 aspect-[9/12]  ease-in-out duration-200 relative bg-neutral-500 transition-all group-hover:-translate-y-12 ">
+      <div className="border w-52 aspect-[9/12] ease-in-out duration-200 relative bg-neutral-500 transition-all group-hover:-translate-y-12">
         <Image src={url} alt="pokemon" height={300} width={300} />
       </div>
     </div>

@@ -19,7 +19,7 @@ const port = 5969;
 app.use(cors());
 
 const games = {};
-const turn = 0;
+
 // Handle WebSocket connections
 io.on("connection", (socket) => {
   console.log("Client connected");
@@ -33,68 +33,65 @@ io.on("connection", (socket) => {
     }
     games[gameID] = { players: [socket.id] };
     console.log(games);
-    socket.emit("allowJoinGame", { gameID: gameID });
+    socket.emit("allowJoinGame", { gameID: gameID, clientID: socket.id });
     console.log(`Game ${gameID} initialized with player: ${socket.id}`);
   });
 
   socket.on("askToJoin", ({ gameID }) => {
     console.log(`Client requesting to join game: ${gameID}`);
-    if (
-      Object.keys(games).includes(gameID) &&
-      games[gameID].players.length < 2
-    ) {
-      games[gameID].players = [...games[gameID].players, socket.id];
-      socket.emit("allowJoinGame", { gameID: gameID });
-      console.log(`Client allowed to join game: ${gameID}`);
-      return;
+    if (games[gameID] && games[gameID].players.length < 2) {
+      games[gameID].players.push(socket.id);
+      socket.emit("allowJoinGame", { gameID: gameID, clientID: socket.id });
+      console.log(`Client ${socket.id} allowed to join game: ${gameID}`);
+    } else {
+      console.log(
+        `Client denied access to game: ${gameID}, games: ${JSON.stringify(games)}`,
+      );
     }
-    console.log(
-      `Client Denied access to game: ${gameID}, games : ${JSON.stringify(games)}`,
-    );
   });
 
   // Send Pokemon data to the client
   socket.on("connectToGame", ({ gameID, clientID }) => {
-    console.log("Connecting To Game");
-    console.log(games);
-    if (
-      Object.keys(games).includes(gameID) &&
-      games[gameID].players.length < 2
-    ) {
-      console.log("Checking Game");
-      if (games[gameID].players.includes(clientID)) {
-        console.log("Allowed");
-        return;
-      }
-      console.log("EndGame");
+    console.log("Connecting to game:", gameID, clientID);
+    if (!games[gameID] || !games[gameID].players.includes(clientID)) {
       socket.emit("endGame");
+      console.log(
+        "Game ended due to invalid game state or client not part of the game",
+      );
+    } else {
+      socket.emit("pokemonData", { data: Pokemon });
+      console.log(`Sent Pokemon data to client: ${socket.id}`);
+      console.log("Client connected to the game:", gameID);
     }
-
-    socket.emit("pokemonData", { data: Pokemon, clientID: socket.id });
-    console.log(games);
-    console.log(`Sent Pokemon data to client: ${socket.id}`);
   });
 
   // Handle move selection from the client
-  socket.on("moveSelection", ({ name, damage, type, targetType, clientID }) => {
-    console.log(
-      `Received move selection: ${name} (${damage} damage, ${type} type) from ${clientID}`,
-    );
+  socket.on(
+    "moveSelection",
+    ({ name, damage, type, targetType, clientID, gameID }) => {
+      console.log(
+        `Received move selection: ${name} (${damage} damage, ${type} type) from ${clientID} in game ${gameID} against ${games[gameID].players.filter((x) => x !== clientID)[0]}`,
+      );
 
-    // Calculate damage based on target Pokemon type
-    let modifiedDamage = damage;
-    if (targetType === "Fire" && type === "Water") {
-      modifiedDamage *= 0.5;
-      console.log(`Damage modified to ${modifiedDamage} due to type advantage`);
-    } else if (targetType === "Water" && type === "Grass") {
-      modifiedDamage *= 2;
-      console.log(`Damage modified to ${modifiedDamage} due to type advantage`);
-    }
+      // Calculate damage based on target Pokemon type
+      let modifiedDamage = damage;
+      if (targetType === "Fire" && type === "Water") {
+        modifiedDamage *= 0.5;
+        console.log(
+          `Damage modified to ${modifiedDamage} due to type advantage`,
+        );
+      } else if (targetType === "Water" && type === "Grass") {
+        modifiedDamage *= 2;
+        console.log(
+          `Damage modified to ${modifiedDamage} due to type advantage`,
+        );
+      }
 
-    // Send damage to the target client
-    socket.broadcast.emit("damage", modifiedDamage);
-    console.log(`Broadcasted damage: ${modifiedDamage}`);
-  });
+      // Send damage to the target client
+      socket.broadcast.emit("damage", modifiedDamage);
+      console.log(`Broadcasted damage: ${modifiedDamage}`);
+    },
+  );
 
   // Handle disconnections
   socket.on("disconnect", () => {

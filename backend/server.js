@@ -3,7 +3,7 @@ const http = require("http");
 const socketIO = require("socket.io");
 const cors = require("cors");
 const { Pokemon } = require("./data/pokemon");
-
+const { generateGameCode } = require("./utils/utils");
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
@@ -17,19 +17,33 @@ const port = 5969;
 
 // Enable CORS for all requests
 app.use(cors());
-const users = [];
+
+const games = {};
+const turn = 0;
 // Handle WebSocket connections
 io.on("connection", (socket) => {
   console.log("Client connected");
-  users.push(socket.id);
-  console.log(users);
+
+  socket.on("newGame", () => {
+    gameID = generateGameCode();
+    console.log(gameID);
+    while (games.includes(gameID)) {
+      gameID = generateGameCode();
+      return;
+    }
+    games[gameID] = { players: [socket.id] };
+    socket.emit("gameCreated", { gameID: gameID });
+  });
   // socket// Send Pokemon data to the client
-  socket.emit("pokemonData", Pokemon);
+  socket.on("connectToGame", (data) => {
+    socket.emit("pokemonData", { data: Pokemon, clientID: socket.id });
+    console.log("Connected");
+  });
 
   // Handle move selection from the client
-  socket.on("moveSelection", ({ moveName, damage, type, targetType }) => {
+  socket.on("moveSelection", ({ name, damage, type, targetType, clientID }) => {
     console.log(
-      `Received move selection: ${moveName} (${damage} damage, ${type} type)`,
+      `Received move selection: ${name} (${damage} damage, ${type} type) from ${clientID}`,
     );
 
     // Calculate damage based on target Pokemon type
@@ -46,8 +60,6 @@ io.on("connection", (socket) => {
 
   // Handle disconnections
   socket.on("disconnect", (socket) => {
-    users.pop(socket);
-    console.log(users);
     console.log("Client disconnected");
   });
 });

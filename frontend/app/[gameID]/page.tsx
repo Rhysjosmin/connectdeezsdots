@@ -157,13 +157,13 @@ function Card({ id, url, attack, name, moves, type }: PokemonType) {
           <h1 className="text-sm font-bold text-white">{name}</h1>
           {moves.map((x) => (
             <div
-              className={`grid grid-cols-4 place-items-center  ${spaceGrotesk.className}`}
+              className={`grid grid-cols-5 place-items-center  ${spaceGrotesk.className}`}
               key={x.name}
             >
-              <div className="place-self-start col-span-2">{x.name} </div>{" "}
+              <div className="place-self-start col-span-3">{x.name} </div>{" "}
               <div
                 style={{ color: TypeAttributes[x.type].color }}
-                className="capitalize"
+                className="capitalize place-self-end"
               >
                 {" "}
                 {x.type}

@@ -2,7 +2,7 @@ const Pokemon = [
   {
     type: "fire",
     id: 3,
-    pokemon: "Charizard",
+    name: "Charizard",
     url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/3.svg",
     stats: {
       hp: 120,
@@ -35,7 +35,7 @@ const Pokemon = [
   },
   {
     type: "water",
-    pokemon: "Blastoise",
+    name: "Blastoise",
     id: 2,
     url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/6.svg",
     stats: {
@@ -70,7 +70,7 @@ const Pokemon = [
   {
     type: "grass",
     id: 1,
-    pokemon: "Venusaur",
+    name: "Venusaur",
     url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/9.svg",
     stats: {
       hp: 120,

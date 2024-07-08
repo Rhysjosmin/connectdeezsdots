@@ -25,19 +25,54 @@ io.on("connection", (socket) => {
   console.log("Client connected");
 
   socket.on("newGame", () => {
-    gameID = generateGameCode();
-    console.log(gameID);
-    while (games.includes(gameID)) {
+    let gameID = generateGameCode();
+    console.log(`New game created with ID: ${gameID}`);
+    while (Object.keys(games).includes(gameID)) {
       gameID = generateGameCode();
-      return;
+      console.log(`Generated new game ID: ${gameID}`);
     }
     games[gameID] = { players: [socket.id] };
-    socket.emit("gameCreated", { gameID: gameID });
+    console.log(games);
+    socket.emit("allowJoinGame", { gameID: gameID });
+    console.log(`Game ${gameID} initialized with player: ${socket.id}`);
   });
-  // socket// Send Pokemon data to the client
-  socket.on("connectToGame", (data) => {
+
+  socket.on("askToJoin", ({ gameID }) => {
+    console.log(`Client requesting to join game: ${gameID}`);
+    if (
+      Object.keys(games).includes(gameID) &&
+      games[gameID].players.length < 2
+    ) {
+      games[gameID].players = [...games[gameID].players, socket.id];
+      socket.emit("allowJoinGame", { gameID: gameID });
+      console.log(`Client allowed to join game: ${gameID}`);
+      return;
+    }
+    console.log(
+      `Client Denied access to game: ${gameID}, games : ${JSON.stringify(games)}`,
+    );
+  });
+
+  // Send Pokemon data to the client
+  socket.on("connectToGame", ({ gameID, clientID }) => {
+    console.log("Connecting To Game");
+    console.log(games);
+    if (
+      Object.keys(games).includes(gameID) &&
+      games[gameID].players.length < 2
+    ) {
+      console.log("Checking Game");
+      if (games[gameID].players.includes(clientID)) {
+        console.log("Allowed");
+        return;
+      }
+      console.log("EndGame");
+      socket.emit("endGame");
+    }
+
     socket.emit("pokemonData", { data: Pokemon, clientID: socket.id });
-    console.log("Connected");
+    console.log(games);
+    console.log(`Sent Pokemon data to client: ${socket.id}`);
   });
 
   // Handle move selection from the client
@@ -50,16 +85,19 @@ io.on("connection", (socket) => {
     let modifiedDamage = damage;
     if (targetType === "Fire" && type === "Water") {
       modifiedDamage *= 0.5;
+      console.log(`Damage modified to ${modifiedDamage} due to type advantage`);
     } else if (targetType === "Water" && type === "Grass") {
       modifiedDamage *= 2;
+      console.log(`Damage modified to ${modifiedDamage} due to type advantage`);
     }
 
     // Send damage to the target client
     socket.broadcast.emit("damage", modifiedDamage);
+    console.log(`Broadcasted damage: ${modifiedDamage}`);
   });
 
   // Handle disconnections
-  socket.on("disconnect", (socket) => {
+  socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
 });
@@ -67,6 +105,7 @@ io.on("connection", (socket) => {
 // Handle HTTP requests
 app.get("/", (req, res) => {
   res.send("Hello, world!");
+  console.log("HTTP request to '/' endpoint");
 });
 
 // Start the server

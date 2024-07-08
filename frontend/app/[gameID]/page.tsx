@@ -3,25 +3,31 @@ import { usePokiStore } from "@/components/state";
 import { config } from "@/config";
 import { MoveType, PokemonType } from "@/utils/types";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 
 const socket = io(config.server);
 
-export default function Home() {
+export default function Home({ params }: { params: { gameID: string } }) {
+  const router = useRouter();
+
   const [pokemonData, setPokemonData] = useState([]);
-  const { setClientID, selectPokemon } = usePokiStore();
+  const { setClientID, selectPokemon, clientID } = usePokiStore();
   useEffect(() => {
-    socket.emit("connectToGame");
+    socket.emit("connectToGame", { gameID: params.gameID, clientID });
   }, []);
   socket.on("pokemonData", (data) => {
     setPokemonData(data.data);
     selectPokemon(data.data[0].id);
     setClientID(data.clientID);
   });
-
+  socket.on("endGame", () => {
+    router.push("/");
+  });
   return (
     <main className="h-screen w-screen overflow-hidden">
+      <h1>Game : {params.gameID}</h1>
       <div className="absolute  bottom-12 right-12">
         <Moves pokemonData={pokemonData} />
         <Stack pokemonData={pokemonData} />

@@ -5,13 +5,18 @@ import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 const socket = io(config.server);
 export default function Page() {
+  const [_gameID, _setGameID] = useState("");
   const router = useRouter();
-  socket.on("gameCreated", ({ gameID }) => {
+  socket.on("allowJoinGame", ({ gameID }) => {
     router.push(`/${gameID}`);
   });
+  const joinGame = () => {
+    socket.emit("askToJoin", { gameID: _gameID });
+  };
   const createGame = () => {
     socket.emit("newGame");
   };
+
   return (
     <main className="flex h-screen gap-8 flex-col items-center justify-center">
       <button
@@ -23,10 +28,15 @@ export default function Page() {
       <hr className="w-96 border-neutral-700 border-dashed" />
       <div className="flex gap-1">
         <input
+          value={_gameID}
+          onChange={(e) => _setGameID(e.target.value)}
           className=" bg-neutral-200 p-1 px-2 rounded-xl text-center"
           placeholder="Game ID"
         />
-        <button className="bg-neutral-400 p-1 px-2 rounded-xl">
+        <button
+          onClick={() => joinGame()}
+          className="bg-neutral-400 p-1 px-2 rounded-xl"
+        >
           Join Game
         </button>
       </div>

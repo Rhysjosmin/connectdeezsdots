@@ -1,9 +1,9 @@
-'use client'
+"use client";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:5969");
+const socket = io("http://172.20.50.109:5969");
 
 export default function Home() {
   const [pokemonData, setPokemonData] = useState([]);
@@ -51,14 +51,21 @@ function Card({
   url,
   attack,
   name,
+  moves,
 }: {
   url: string;
   attack: string;
   name: string;
+  moves: Array<{
+    name: string;
+    damage: number;
+    type: "fire" | "dragon" | "grass" | "water";
+  }>;
 }) {
   return (
     <div className="w-52 aspect-[9/12] group z-0 hover:z-10">
       <div className="border w-52 aspect-[9/12]  ease-in-out duration-200 relative bg-neutral-500 transition-all group-hover:-translate-y-12 ">
+        {JSON.stringify(moves)}
         <Image src={url} alt="pokemon" height={300} width={300} />
       </div>
     </div>

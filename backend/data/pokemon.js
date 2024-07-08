@@ -2,6 +2,7 @@ const Pokemon = [
     {
       "type": "Fire",
       "pokemon": "Charizard",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/3.svg",
       "stats": {
         "hp": 120,
         "attack": 84,
@@ -34,6 +35,7 @@ const Pokemon = [
     {
       "type": "Water",
       "pokemon": "Blastoise",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/6.svg",
       "stats": {
         "hp": 120,
         "attack": 83,
@@ -66,6 +68,7 @@ const Pokemon = [
     {
       "type": "Grass",
       "pokemon": "Venusaur",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/9.svg",
       "stats": {
         "hp": 120,
         "attack": 82,
